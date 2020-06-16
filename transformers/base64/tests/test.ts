@@ -1,4 +1,3 @@
-// Copyright 2018-2020 the Deno authors. All rights reserved. MIT license.
 import { assertEquals } from "https://deno.land/x/std@v0.57.0/testing/asserts.ts";
 import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
 import { encode } from "https://deno.land/std@v0.57.0/encoding/base64.ts";

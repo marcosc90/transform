@@ -24,6 +24,7 @@ interface Target {
   to(dst: Writer): Promise<number>;
 }
 
+/* Returns a `Transformer` that applies `t` in sequence. */
 export function chain(...transformers: Transformer[]): Transformer {
   return {
     reset(): void {
@@ -62,6 +63,7 @@ export function chain(...transformers: Transformer[]): Transformer {
   };
 }
 
+/* Returns a new `Reader` that wraps `r` by transforming the bytes read via `t`. It calls `t.reset()` */
 export function newReader(r: Reader, t: Transformer): Reader {
   if (typeof t.reset === "function") {
     t.reset();
@@ -101,6 +103,7 @@ export function newReader(r: Reader, t: Transformer): Reader {
   };
 }
 
+/* A wrapper around `Transformer.chain` & `Transformer.newReader` */
 export function pipeline(
   r: Reader,
   ...transformers: Transformer[]

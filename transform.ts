@@ -6,14 +6,22 @@ type Writer = Deno.Writer;
 const DEFAULT_BUFFER_SIZE = 1024 * 32;
 
 export interface Transformer {
+  // transform writes to dst the transformed bytes read from src, and
+  // returns the number of dst bytes written. The
+  // atEOF argument tells whether src represents the last bytes of the
+  // input.
   transform(
     src: Uint8Array,
     dst: Writer,
     atEOF: boolean,
-  ): Promise<number>;
+  ): Promise<number | null>;
 
-  // Reset resets the state and allows a Transformer to be reused
+  // reset resets the state and allows a Transformer to be reused
   reset(): void;
+}
+
+interface Target {
+  to(dst: Writer): Promise<number>;
 }
 
 export function chain(...transformers: Transformer[]): Transformer {
@@ -28,17 +36,23 @@ export function chain(...transformers: Transformer[]): Transformer {
       src: Uint8Array,
       dst: Writer,
       atEOF: boolean,
-    ): Promise<number> {
+    ): Promise<number | null> {
       let buffer = new Deno.Buffer();
       let chunk = src;
-      let n = 0;
+      let n: number | null = 0;
+
       for (let i = 0; i < transformers.length; i++) {
         const t = transformers[i];
         let writer = i === transformers.length - 1 ? dst : buffer;
         n = await t.transform(chunk, writer, atEOF);
+        if (n === null) {
+          return null;
+        }
+
         chunk = buffer.bytes();
         buffer = new Deno.Buffer();
       }
+
       return n;
     },
   };
@@ -56,9 +70,10 @@ export function newReader(r: Reader, t: Transformer): Reader {
         if (atEOF) {
           return null;
         }
-        const n = await r.read(src);
 
+        const n = await r.read(src);
         atEOF = n === null;
+
         const dstN = await t.transform(
           src.subarray(0, n || 0),
           buffer,
@@ -79,14 +94,10 @@ export function newReader(r: Reader, t: Transformer): Reader {
   };
 }
 
-interface Pipeline {
-  to(dst: Writer): Promise<number>;
-}
-
 export function pipeline(
   r: Reader,
   ...transformers: Transformer[]
-): Reader & Pipeline {
+): Reader & Target {
   const transformer = chain(...transformers);
   const reader = newReader(r, transformer);
 

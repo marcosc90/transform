@@ -90,7 +90,7 @@ export class Base64Decoder implements Transformer {
     src: Uint8Array,
     dst: Writer,
     atEOF: boolean,
-  ): Promise<number> {
+  ): Promise<number | null> {
     let chunk = this.#extra ? concat(this.#extra, src) : src;
 
     // 4 characters represent 3 bytes

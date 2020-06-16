@@ -24,7 +24,7 @@ export class Base64Encoder implements Transformer {
     src: Uint8Array,
     dst: Writer,
     atEOF: boolean,
-  ): Promise<number> {
+  ): Promise<number | null> {
     if (atEOF) {
       if (this.#extra) {
         // Flush remaining

@@ -1,0 +1,17 @@
+name: Transform CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Setup Deno
+      uses: denolib/setup-deno@master
+    
+    - name: Format
+      run: deno fmt --check
+    - name: Tests
+      run: deno test -A

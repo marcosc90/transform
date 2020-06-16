@@ -16,6 +16,16 @@ export class Base64Encoder implements Transformer {
     return chunk.length;
   };
 
+  #flush = async (dst: Writer): Promise<number> => {
+    if (this.#extra) {
+      // Flush remaining
+      const chunk = this.#extra;
+      this.#extra = null;
+      return this.#write(dst, chunk);
+    }
+    return 0;
+  };
+
   reset() {
     this.#extra = null;
   }
@@ -26,13 +36,7 @@ export class Base64Encoder implements Transformer {
     atEOF: boolean,
   ): Promise<number | null> {
     if (atEOF) {
-      if (this.#extra) {
-        // Flush remaining
-        const chunk = this.#extra;
-        this.#extra = null;
-        return this.#write(dst, chunk);
-      }
-      return 0;
+      return this.#flush(dst);
     }
 
     let chunk = src;

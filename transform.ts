@@ -9,7 +9,7 @@ export interface Transformer {
   // transform writes to dst the transformed bytes read from src, and
   // returns the number of dst bytes written. The
   // atEOF argument tells whether src represents the last bytes of the
-  // input.
+  // input, all internal data must be written to dst at that point.
   transform(
     src: Uint8Array,
     dst: Writer,
@@ -17,7 +17,7 @@ export interface Transformer {
   ): Promise<number | null>;
 
   // reset resets the state and allows a Transformer to be reused
-  reset(): void;
+  reset?(): void;
 }
 
 interface Target {
@@ -28,7 +28,9 @@ export function chain(...transformers: Transformer[]): Transformer {
   return {
     reset(): void {
       for (let t of transformers) {
-        t.reset();
+        if (typeof t.reset === "function") {
+          t.reset();
+        }
       }
     },
 
@@ -43,14 +45,16 @@ export function chain(...transformers: Transformer[]): Transformer {
 
       for (let i = 0; i < transformers.length; i++) {
         const t = transformers[i];
-        let writer = i === transformers.length - 1 ? dst : buffer;
+        const last = i === transformers.length - 1;
+        let writer = last ? dst : buffer;
         n = await t.transform(chunk, writer, atEOF);
         if (n === null) {
           return null;
         }
-
-        chunk = buffer.bytes();
-        buffer = new Deno.Buffer();
+        if (!last) {
+          chunk = buffer.bytes();
+          buffer = new Deno.Buffer();
+        }
       }
 
       return n;
@@ -59,7 +63,10 @@ export function chain(...transformers: Transformer[]): Transformer {
 }
 
 export function newReader(r: Reader, t: Transformer): Reader {
-  t.reset();
+  if (typeof t.reset === "function") {
+    t.reset();
+  }
+
   const buffer = new Deno.Buffer();
   const src = new Uint8Array(DEFAULT_BUFFER_SIZE);
   let atEOF = false;

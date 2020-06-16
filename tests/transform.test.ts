@@ -5,7 +5,6 @@ const { Base64Encoder, Base64Decoder } = Transform.Transformers;
 
 Deno.test("Basic transformer", async () => {
   const transformer: Transform.Transformer = {
-    reset() {},
     async transform(
       src: Uint8Array,
       dst: Deno.Writer,

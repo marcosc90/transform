@@ -1,6 +1,6 @@
 import { concat } from "./util.ts";
 import { Transformer } from "../../transform.ts";
-import { b64Decode } from './deps.ts'
+import { b64Decode } from "./deps.ts";
 
 type Writer = Deno.Writer;
 

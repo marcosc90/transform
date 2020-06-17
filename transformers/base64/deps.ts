@@ -1,3 +1,3 @@
 export {
-  encode as b64encode,
-} from "https://deno.land/std@v0.57.0/encoding/base64.ts";
+  b64Decode, b64Encode
+} from "https://raw.githubusercontent.com/marcosc90/encoding-wasm/v0.1.0/mod.ts";

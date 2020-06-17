@@ -1,4 +1,4 @@
-import { b64encode } from "./deps.ts";
+import { b64Encode } from "./deps.ts";
 import { concat } from "./util.ts";
 import { Transformer } from "../../transform.ts";
 
@@ -12,7 +12,7 @@ export class Base64Encoder implements Transformer {
     dst: Writer,
     chunk: Uint8Array,
   ): Promise<number> => {
-    await Deno.writeAll(dst, this.#encoder.encode(b64encode(chunk)));
+    await Deno.writeAll(dst, b64Encode(chunk));
     return chunk.length;
   };
 

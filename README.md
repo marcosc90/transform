@@ -55,7 +55,7 @@ output.close();
 
 ### Zlib
 
-#### `GzDecoder`
+#### `GzEncoder`
 ```ts
 import { Untar } from "https://deno.land/std/archive/tar.ts";
 import * as Transform from "https://deno.land/x/transform/mod.ts";
@@ -69,7 +69,7 @@ await tar.append("deno.txt", {
 });
 
 const output = await Deno.open('file.tar.gz', { write: true, create: true });
-await pipeline(tar.getReader(), new GzEncoder())
+await Transform.pipeline(tar.getReader(), new GzEncoder())
   .to(output);
 
 output.close()

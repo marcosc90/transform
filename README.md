@@ -75,11 +75,11 @@ await pipeline(tar.getReader(), new GzEncoder())
 output.close()
 ```
 
-#### `GzEncoder`
+#### `GzDecoder`
 ```ts
 import { tar } from "https://deno.land/std/archive/tar.ts";
 import * as Transform from "https://deno.land/x/transform/mod.ts";
-const { GzEncoder } = Transform.Transformers;
+const { GzDecoder } = Transform.Transformers;
 
 const input = await Deno.open('file.tar.gz', { read: true });
 const untar = new Untar(

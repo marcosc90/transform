@@ -6,7 +6,7 @@ Based on [Golang Transformer](https://godoc.org/golang.org/x/text/transform?tab=
 ## Building Transformers
 
 ```ts
-import * as Transform from "https://deno.land/x/transform";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
 
 const ATransformer: Transform.Transformer =  {
    reset() {
@@ -29,7 +29,7 @@ const ATransformer: Transform.Transformer =  {
 
 #### `Base64Decoder`
 ```ts
-import * as Transform from "https://deno.land/x/transform";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
 const { Base64Decoder } = Transform.Transformers;
 
 const input = await Deno.open('./image.b64', { read: true });
@@ -42,7 +42,7 @@ output.close();
 
 #### `Base64Encoder`
 ```ts
-import * as Transform from "https://deno.land/x/transform";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
 const { Base64Encoder } = Transform.Transformers;
 
 const input = await Deno.open('./image.png', { read: true });
@@ -53,6 +53,44 @@ input.close();
 output.close();
 ```
 
+### Zlib
+
+#### `GzDecoder`
+```ts
+import { Untar } from "https://deno.land/std/archive/tar.ts";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
+const { GzEncoder } = Transform.Transformers;
+
+const tar = new Tar();
+const content = new TextEncoder().encode("Deno.land");
+await tar.append("deno.txt", {
+  reader:  new  Deno.Buffer(content),
+  contentSize: content.byteLength,
+});
+
+const output = await Deno.open('file.tar.gz', { write: true, create: true });
+await pipeline(tar.getReader(), new GzEncoder())
+  .to(output);
+
+output.close()
+```
+
+#### `GzEncoder`
+```ts
+import { tar } from "https://deno.land/std/archive/tar.ts";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
+const { GzEncoder } = Transform.Transformers;
+
+const input = await Deno.open('file.tar.gz', { read: true });
+const untar = new Untar(
+  Transform.newReader(input, new GzDecoder())
+);
+
+for await (const entry of untar) {
+  console.log(entry);
+}
+```
+
 ## API
 
 
@@ -61,7 +99,7 @@ output.close();
 Returns a new `Reader` that wraps `r` by transforming the bytes read via `t`. It calls `t.reset()`.
 
 ```ts
-import * as Transform from "https://deno.land/x/transform";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
 
 /* ... */
 
@@ -82,7 +120,7 @@ file.close()
 Returns a `Transformer` that applies `t` in sequence.
 
 ```ts
-import * as Transform from "https://deno.land/x/transform";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
 const { Base64Decoder, Base64Encoder } = Transform.Transformers;
 
 const expected = await Deno.readFile('./image.png');
@@ -100,7 +138,7 @@ input.close();
 A wrapper around `Transformer.chain` & `Transformer.newReader`
 
 ```ts
-import * as Transform from "https://deno.land/x/transform";
+import * as Transform from "https://deno.land/x/transform/mod.ts";
 const { Base64Decoder, Base64Encoder } = Transform.Transformers;
 
 const expected = await Deno.readFile('./image.png');

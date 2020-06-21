@@ -4,6 +4,7 @@ import {
   deferred,
   Deferred,
 } from "https://deno.land/std@0.57.0/async/deferred.ts";
+import { TransformError } from "../errors.ts";
 
 type Writer = Deno.Writer;
 type Buffer = Deno.Buffer;
@@ -12,6 +13,7 @@ class GzBase implements Transformer {
   #buffer?: Deno.Buffer;
   #end: Deferred<void> = deferred();
   #parser?: any;
+  #error?: Error | null;
   constructor(readonly type: string) {
     this.reset();
   }
@@ -26,12 +28,19 @@ class GzBase implements Transformer {
       Deno.writeAllSync(this.#buffer as Buffer, chunk);
     };
 
+    this.#error = null;
     this.#parser.onEnd = async (status: number) => {
       if (status === pako.Z_OK) {
         return this.#end.resolve();
       }
 
-      return this.#end.reject();
+      const error = new TransformError(
+        `Failed to ${this.type} with: ${pako.errors[status]}`,
+        status,
+        pako.errors[status],
+      );
+
+      this.#error = error;
     };
   }
 
@@ -49,6 +58,10 @@ class GzBase implements Transformer {
       await this.#end;
     } else {
       this.#parser.push(src, false);
+    }
+
+    if (this.#error) {
+      throw this.#error;
     }
 
     return Deno.copy(this.#buffer as Buffer, dst);

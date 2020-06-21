@@ -1,7 +1,11 @@
-import { assertEquals } from "https://deno.land/x/std@v0.57.0/testing/asserts.ts";
+import {
+  assertEquals,
+  assertThrowsAsync,
+} from "https://deno.land/x/std@v0.57.0/testing/asserts.ts";
 import * as path from "https://deno.land/std@0.57.0/path/mod.ts";
 import { encode } from "https://deno.land/std@v0.57.0/encoding/base64.ts";
 import { Base64Decoder, Base64Encoder } from "../mod.ts";
+import { TransformError } from "../../errors.ts";
 import * as Transform from "../../../transform.ts";
 
 const __dirname = path.dirname(path.fromFileUrl(import.meta.url));
@@ -38,10 +42,12 @@ const stringCharReader = (string: string): Deno.Reader => {
 };
 
 Deno.test("base64Encoder", async () => {
+  // Reuse decoder to make sure .reset works correctly
+  const encoder = new Base64Encoder();
   for (const [input, output] of testsetString) {
     const reader = Transform.newReader(
       stringCharReader(input),
-      new Base64Encoder(),
+      encoder,
     );
     const result = await Deno.readAll(reader);
     assertEquals(new TextDecoder().decode(result), output);
@@ -49,15 +55,30 @@ Deno.test("base64Encoder", async () => {
 });
 
 Deno.test("base64Decoder", async () => {
+  // Reuse decoder to make sure .reset works correctly
+  const decoder = new Base64Decoder();
+
   for (const [input, output] of testsetString) {
     const reader = Transform.newReader(
       stringCharReader(output),
-      new Base64Decoder(),
+      decoder,
     );
 
     const result = await Deno.readAll(reader);
     assertEquals(new TextDecoder().decode(result), input);
   }
+});
+
+Deno.test("base64Decoder: Invalid base64 should throw", async () => {
+  const reader = Transform.newReader(
+    stringCharReader("$!aaa$2"),
+    new Base64Decoder(),
+  );
+  await assertThrowsAsync(
+    async () => await Deno.readAll(reader),
+    TransformError,
+    "Invalid base64 input",
+  );
 });
 
 Deno.test("base64 file", async () => {
@@ -77,7 +98,6 @@ Deno.test("base64 file", async () => {
   file = await Deno.open(filePath, { read: true });
 
   const reader = Transform.newReader(file, new Base64Encoder());
-
   const decoderReader = Transform.newReader(reader, new Base64Decoder());
 
   assertEquals(

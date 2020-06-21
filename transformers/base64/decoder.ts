@@ -1,6 +1,7 @@
 import { concat } from "./util.ts";
 import { Transformer } from "../../transform.ts";
 import { b64Decode } from "./deps.ts";
+import { TransformError } from "../errors.ts";
 
 type Writer = Deno.Writer;
 
@@ -33,7 +34,13 @@ export class Base64Decoder implements Transformer {
       return 0;
     }
 
-    chunk = b64Decode(chunk);
+    try {
+      chunk = b64Decode(chunk);
+    } catch {
+      // RuntimeError from WASM
+      throw new TransformError("Invalid base64 input");
+    }
+
     await Deno.writeAll(
       dst,
       chunk,

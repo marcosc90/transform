@@ -1,7 +1,8 @@
 import * as Transform from "../mod.ts";
 import { assertEquals } from "https://deno.land/x/std@v0.57.0/testing/asserts.ts";
 
-const { Base64Encoder, Base64Decoder } = Transform.Transformers;
+const { Base64Encoder, Base64Decoder, GzEncoder, GzDecoder } =
+  Transform.Transformers;
 
 Deno.test("Basic transformer", async () => {
   const transformer: Transform.Transformer = {
@@ -20,7 +21,6 @@ Deno.test("Basic transformer", async () => {
   const itemsReader: Deno.Reader = {
     async read(p): Promise<number | null> {
       const item = items.shift();
-
       if (!item) {
         return null;
       }
@@ -41,12 +41,17 @@ Deno.test("Basic transformer", async () => {
   );
 });
 
-Deno.test("Chain encode/decode base64", async () => {
+Deno.test("Chain encode/decode transformers", async () => {
   const inputs = ["deno.land", "a".repeat(1000), "deno\nland\n\r"];
 
   for (const input of inputs) {
     const buf = new TextEncoder().encode(input).buffer;
-    const transform = Transform.chain(new Base64Encoder(), new Base64Decoder());
+    const transform = Transform.chain(
+      new Base64Encoder(),
+      new GzEncoder(),
+      new GzDecoder(),
+      new Base64Decoder(),
+    );
     const reader = Transform.newReader(new Deno.Buffer(buf), transform);
     const result = await Deno.readAll(reader);
     assertEquals(new TextDecoder().decode(result), input);
@@ -61,6 +66,8 @@ Deno.test("Pipeline encode/decode base64", async () => {
     const reader = Transform.pipeline(
       new Deno.Buffer(buf),
       new Base64Encoder(),
+      new GzEncoder(),
+      new GzDecoder(),
       new Base64Decoder(),
     );
     const result = await Deno.readAll(reader);

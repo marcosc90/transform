@@ -10,6 +10,8 @@ jobs:
 
     - name: Setup Deno
       uses: denolib/setup-deno@master
+      with:
+        deno-version: v1.1.0
     
     - name: Format
       run: deno fmt --check
